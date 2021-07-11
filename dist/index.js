@@ -868,6 +868,7 @@ const run = async () => {
     tail.unwatch()
   }, 15000)
 
+  core.info('Waiting for PID...')
   await snooze(5000)
   const pid = fs.readFileSync('openvpn.pid', 'utf8').trim()
   core.info(`Daemon PID: ${pid}`)
