@@ -760,28 +760,32 @@ const coreCommand = __webpack_require__(241)
 const main = __webpack_require__(713)
 const post = __webpack_require__(303)
 
-const isPost = !!process.env.STATE_isPost
+const start = async () => {
+  const isPost = !!process.env.STATE_isPost
 
-if (isPost) {
-  // cleanup
-  const pid = process.env.STATE_pid
-  try {
-    post(pid)
-  } catch (error) {
-    core.setFailed(error.message)
-  }
-} else {
-  // main
-  try {
-    const pid = main()
-    coreCommand.issueCommand('save-state', { name: 'pid' }, pid)
-  } catch (error) {
-    core.setFailed(error.message)
-  } finally {
-    // cf. https://github.com/actions/checkout/blob/main/src/state-helper.ts
-    coreCommand.issueCommand('save-state', { name: 'isPost' }, 'true')
+  if (isPost) {
+    // cleanup
+    const pid = process.env.STATE_pid
+    try {
+      post(pid)
+    } catch (error) {
+      core.setFailed(error.message)
+    }
+  } else {
+    // main
+    try {
+      const pid = await main()
+      coreCommand.issueCommand('save-state', { name: 'pid' }, pid)
+    } catch (error) {
+      core.setFailed(error.message)
+    } finally {
+      // cf. https://github.com/actions/checkout/blob/main/src/state-helper.ts
+      coreCommand.issueCommand('save-state', { name: 'isPost' }, 'true')
+    }
   }
 }
+
+start()
 
 
 /***/ }),
@@ -794,7 +798,13 @@ const core = __webpack_require__(186)
 const exec = __webpack_require__(264)
 const Tail = __webpack_require__(824)/* .Tail */ .x
 
-const run = () => {
+const snooze = (ms) => {
+  return new Promise(resolve => {
+    return setTimeout(resolve, ms)
+  })
+}
+
+const run = async () => {
   const configFile = core.getInput('config_file').trim()
   const username = core.getInput('username').trim()
   const password = core.getInput('password').trim()
@@ -858,6 +868,7 @@ const run = () => {
     tail.unwatch()
   }, 15000)
 
+  await snooze(5000)
   const pid = fs.readFileSync('openvpn.pid', 'utf8').trim()
   core.info(`Daemon PID: ${pid}`)
   return pid

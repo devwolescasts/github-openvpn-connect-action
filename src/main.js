@@ -3,7 +3,13 @@ const core = require('@actions/core')
 const exec = require('./exec')
 const Tail = require('tail').Tail
 
-const run = () => {
+const snooze = (ms) => {
+  return new Promise(resolve => {
+    return setTimeout(resolve, ms)
+  })
+}
+
+const run = async () => {
   const configFile = core.getInput('config_file').trim()
   const username = core.getInput('username').trim()
   const password = core.getInput('password').trim()
@@ -67,6 +73,7 @@ const run = () => {
     tail.unwatch()
   }, 15000)
 
+  await snooze(5000)
   const pid = fs.readFileSync('openvpn.pid', 'utf8').trim()
   core.info(`Daemon PID: ${pid}`)
   return pid
